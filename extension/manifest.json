@@ -1,0 +1,33 @@
+{
+  "manifest_version": 3,
+  "name": "FRAMEET · 视频截图拼壁纸",
+  "version": "0.7.0",
+  "description": "把心动的一帧留在桌面上。边看视频边截图，自动拼成专属壁纸，加上文字和贴纸，每天与喜欢的画面重逢。",
+  "minimum_chrome_version": "116",
+  "permissions": [
+    "activeTab",
+    "sidePanel",
+    "scripting"
+  ],
+  "background": {
+    "service_worker": "background.js",
+    "type": "module"
+  },
+  "action": {
+    "default_title": "FRAMEET · 截图做壁纸"
+  },
+  "side_panel": {
+    "default_path": "panel.html"
+  },
+  "commands": {
+    "capture-frame": {
+      "suggested_key": {
+        "default": "Alt+Shift+S"
+      },
+      "description": "收集当前视频帧"
+    }
+  },
+  "icons": {
+    "128": "assets/icon.png"
+  }
+}
