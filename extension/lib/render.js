@@ -1,4 +1,4 @@
-export const defaults={resolution:'1920x1080',columns:'auto',gap:9,grain:true,offset:true,copy:'',ink:'#f7ee55',textSize:43,textStyle:'crayon',template:'film',polaroidIds:null,polaroidCount:6,prefixRuleVersion:1,simpleCount:3,simpleDirection:'auto',simpleGap:30,simpleCopy:'',backgroundMode:'default',polaroidTransforms:{},polaroidCopy:'',background:null,backgroundColor:'#8ba6a0',captionInk:'#303633',decorations:[]};
+export const defaults={resolution:'1920x1080',columns:'auto',gap:9,grain:true,offset:true,copy:'',ink:'#f7ee55',textSize:43,textStyle:'crayon',template:'film',polaroidIds:null,polaroidCount:6,prefixRuleVersion:1,simpleCount:3,simpleDirection:'auto',simpleGap:30,simpleCopy:'',backgroundMode:'default',polaroidTransforms:{},polaroidCopy:'',background:null,backgroundColor:'#8ba6a0',captionInk:'#303633',chineseFont:'yahei',decorations:[]};
 export function layout(count,width,height,settings){
   if(!count)return [];
   const portrait=height>width;
@@ -26,10 +26,15 @@ function photo(ctx,img,slot,frame){
 }
 const textCache=new Map();
 export function clearRenderCache(){for(const item of textCache.values()){item.sprite.width=0;item.sprite.height=0}textCache.clear()}
-function textSprite(text,size,color,style){
+const chineseFamilies={yahei:'"Microsoft YaHei", "PingFang SC", sans-serif',pingfang:'"PingFang SC", "Microsoft YaHei", sans-serif',heiti:'SimHei, "Heiti SC", sans-serif',songti:'SimSun, "Songti SC", serif',kaiti:'KaiTi, "Kaiti SC", serif'};
+function textFont(text,size,style,chinese='yahei'){
+ const fonts={handwrite:['Caveat',600],marker:['Marker',400],sketch:['Sketch',700],crayon:['Kalam',700]},[family,weight]=fonts[style]||fonts.handwrite,cjk=chineseFamilies[chinese]||chineseFamilies.yahei;
+ return `${weight} ${size}px ${family}, ${cjk}`;
+}
+function textSprite(text,size,color,style,chinese){
   const fonts={handwrite:['Caveat',600],marker:['Marker',400],sketch:['Sketch',700],crayon:['Kalam',700]};
-  const [family,weight]=fonts[style]||fonts.handwrite,font=`${weight} ${size}px ${family}, cursive`;
-  const key=JSON.stringify([text,size,color,style,document.fonts.check(font)]);if(textCache.has(key))return textCache.get(key);
+  const font=textFont(text,size,style,chinese);
+  const key=JSON.stringify([text,size,color,style,chinese,document.fonts.check(font)]);if(textCache.has(key))return textCache.get(key);
   const sprite=document.createElement('canvas'),ctx=sprite.getContext('2d'),lines=text.split('\n');ctx.font=font;
   const widths=lines.map(line=>style==='crayon'?[...line].reduce((w,ch)=>w+ctx.measureText(ch).width,0):ctx.measureText(line).width);
   const padding=Math.ceil(size*.5),w=Math.max(1,...widths),h=lines.length*size*1.12;
@@ -65,62 +70,51 @@ function drawSticker(c,d,scale){
 export const DEFAULT_CAPTIONS=['Embrace the unknown.','I choose you, always.','One step at a time.','Life is a journey.','Never lose your spark.','Freedom begins within.'];
 export const DEFAULT_BACKGROUND=new URL('../assets/water2.jpg',import.meta.url).href;
 export const countFor=settings=>Math.max(1,Math.min(6,Math.round(Number(settings.template==='simple'?settings.simpleCount:settings.polaroidCount)|| (settings.template==='simple'?3:6))));
-export function backgroundSource(settings){return settings.background?.dataUrl||(settings.backgroundMode==='color'?null:DEFAULT_BACKGROUND)}
+export function backgroundSource(settings){return settings.background?.dataUrl||(settings.backgroundMode==='color'||settings.template!=='polaroid'?null:DEFAULT_BACKGROUND)}
 export function polaroidFrames(frames,settings){return frames.filter(f=>!f.deletedAt).slice(0,countFor({...settings,template:'polaroid'}))}
-export function renderFrames(frames,settings){const list=frames.filter(f=>!f.deletedAt);return settings.template==='film'?list:list.slice(0,countFor(settings))}
+export function renderFrames(frames,settings){const list=frames.filter(f=>!f.deletedAt);return settings.template==='film'?(settings.filmCount?list.slice(0,Math.max(1,Number(settings.filmCount)||list.length)):settings.filmIds?.length?list.filter(f=>settings.filmIds.includes(f.id)):list):list.slice(0,countFor(settings))}
 export function simpleLayout(frames,settings,width,height){const used=renderFrames(frames,settings),count=used.length;if(!count)return [];const margin=Math.min(width,height)*.055,gap=Number(settings.simpleGap||0)*Math.min(width,height)/1080,areaW=width-margin*2,areaH=height-margin*2;let direction=settings.simpleDirection||'auto';if(direction==='auto')direction=count<=3?(height>width?'vertical':'horizontal'):'grid';let cols=count===4?2:direction==='horizontal'?count:direction==='vertical'?1:Math.min(count,height>width?2:3),rows=Math.ceil(count/cols);const aspect=used.reduce((sum,f)=>sum+f.width/f.height,0)/count;const cw=Math.min((areaW-gap*(cols-1))/cols,((areaH-gap*(rows-1))/rows)*aspect),ch=cw/aspect,totalH=rows*ch+(rows-1)*gap;return used.map((f,i)=>{const row=Math.floor(i/cols),inRow=Math.min(cols,count-row*cols),rowW=inRow*cw+(inRow-1)*gap;return {index:i,frameId:f.id,x:(width-rowW)/2+(i%cols)*(cw+gap),y:(height-totalH)/2+row*(ch+gap),w:cw,h:ch}})}
-export function previewSlots(frames,settings){const [w,h]=settings.resolution.split('x').map(Number);if(settings.template==='polaroid')return polaroidCards(frames,settings,w,h).map(c=>({frameId:c.frameId,...c.photo}));if(settings.template==='simple')return simpleLayout(frames,settings,w,h);return layout(frames.length,w,h,settings).map((slot,i)=>({...slot,frameId:frames[i].id}))}
+export function previewSlots(frames,settings){frames=renderFrames(frames,settings);const [w,h]=settings.resolution.split('x').map(Number);if(settings.template==='polaroid')return polaroidCards(frames,settings,w,h).map(c=>({frameId:c.frameId,...c.photo}));if(settings.template==='simple')return simpleLayout(frames,settings,w,h);return layout(frames.length,w,h,settings).map((slot,i)=>({...slot,frameId:frames[i].id}))}
 export function polaroidLayout(count,width,height){
  count=Math.min(6,count);if(!count)return [];
- let positions;
- if(height>width){
-  if(count===1)positions=[[.16,.20,.68,.54,1]];
-  else if(count===2)positions=[[.19,.06,.62,.40,-1],[.19,.54,.62,.40,1]];
-  else{const rows=Math.ceil(count/2),ch=rows===2?.40:.28,ys=rows===2?[.07,.53]:[.045,.36,.675];positions=Array.from({length:count},(_,i)=>[i%2?.535:.065,ys[Math.floor(i/2)],.40,ch,i%2?1:-1])}
- }else{
-  const layouts={
-   1:[[.355,.08,.29,.82,-1]],
-   2:[[.15,.13,.30,.75,-1],[.55,.14,.30,.75,1]],
-   3:[[.07,.19,.26,.66,-1],[.37,.12,.26,.74,.5],[.67,.19,.26,.66,1]],
-   4:[[.14,.035,.26,.44,-.8],[.60,.045,.26,.44,.8],[.11,.525,.28,.44,.6],[.58,.53,.28,.43,-.6]],
-   5:[[.10,.05,.23,.44,-.5],[.39,.065,.22,.44,.7],[.67,.045,.24,.46,-.4],[.19,.535,.25,.43,.6],[.56,.54,.25,.43,-.6]],
-   6:[[.15,.065,.19,.405,.3],[.43,.09,.20,.43,-.4],[.65,.035,.28,.50,.5],[.04,.46,.28,.50,-.4],[.37,.545,.205,.415,.4],[.68,.535,.205,.425,-.5]]
-  };positions=layouts[count];
- }
- return positions.map(([x,y,w,h,angle],index)=>{x*=width;y*=height;w*=width;h*=height;const pad=w*.064,captionH=h*.19;return {index,x,y,w,h,angle,photo:{x:x+pad,y:y+pad,w:w-pad*2,h:h-pad*2-captionH},caption:{x:x+pad,y:y+h-pad-captionH,w:w-pad*2,h:captionH}}});
+ const margin=Math.min(width,height)*.09,gap=Math.min(width,height)*.045,ratio=.80;
+ let best;
+ for(let cols=1;cols<=count;cols++){const rows=Math.ceil(count/cols),w=Math.min((width-2*margin-gap*(cols-1))/cols,(height-2*margin-gap*(rows-1))/rows*ratio),h=w/ratio,score=w*h*(1-(cols*rows-count)*.035);if(!best||score>best.score)best={cols,rows,w,h,score}}
+ const {cols,rows,w,h}=best,totalH=rows*h+(rows-1)*gap;
+ return Array.from({length:count},(_,index)=>{const row=Math.floor(index/cols),inRow=Math.min(cols,count-row*cols),x=(width-inRow*w-(inRow-1)*gap)/2+(index%cols)*(w+gap),y=(height-totalH)/2+row*(h+gap),pad=w*.064,captionH=h*.19;return {index,x,y,w,h,angle:0,photo:{x:x+pad,y:y+pad,w:w-pad*2,h:h-pad*2-captionH},caption:{x:x+pad,y:y+h-pad-captionH,w:w-pad*2,h:captionH}}});
 }
 export function polaroidCards(frames,settings,width,height){
  const used=polaroidFrames(frames,settings);return polaroidLayout(used.length,width,height).map((base,i)=>{
-  const frame=used[i],t=settings.polaroidTransforms?.[frame.id]||{},angle=base.angle*Math.PI/180,cos=Math.abs(Math.cos(angle)),sin=Math.abs(Math.sin(angle));
+  const frame=used[i],stored=settings.polaroidTransforms?.[frame.id],t=stored?.resolution===settings.resolution?stored:{},angle=base.angle*Math.PI/180,cos=Math.abs(Math.cos(angle)),sin=Math.abs(Math.sin(angle));
   const maxScale=Math.min(1.8,width*.97/(base.w*cos+base.h*sin),height*.97/(base.w*sin+base.h*cos)),scale=Math.max(.5,Math.min(maxScale,Number(t.scale)||1));
-  const w=base.w*scale,h=base.h*scale,halfW=(w*cos+h*sin)/2,halfH=(w*sin+h*cos)/2;
+  const stretchX=Math.max(.5,Math.min(2,Number(t.stretchX)||1)),stretchY=Math.max(.5,Math.min(2,Number(t.stretchY)||1)),w=Math.min(width*.97,base.w*scale*stretchX),h=Math.min(height*.97,base.h*scale*stretchY),halfW=(w*cos+h*sin)/2,halfH=(w*sin+h*cos)/2;
   const cx=Math.max(halfW,Math.min(width-halfW,(t.x??((base.x+base.w/2)/width))*width)),cy=Math.max(halfH,Math.min(height-halfH,(t.y??((base.y+base.h/2)/height))*height));
   const x=cx-w/2,y=cy-h/2,pad=w*.064,captionH=h*.19;
-  return {...base,x,y,w,h,scale,frameId:frame.id,photo:{x:x+pad,y:y+pad,w:w-pad*2,h:h-pad*2-captionH},caption:{x:x+pad,y:y+h-pad-captionH,w:w-pad*2,h:captionH}};
+  return {...base,x,y,w,h,scale,stretchX,stretchY,frameId:frame.id,photo:{x:x+pad,y:y+pad,w:w-pad*2,h:h-pad*2-captionH},caption:{x:x+pad,y:y+h-pad-captionH,w:w-pad*2,h:captionH}};
  });
 }
-export function wrapCaption(text,width,size,style){
- const family={handwrite:'Caveat',marker:'Marker',sketch:'Sketch',crayon:'Kalam'}[style]||'Caveat';const c=document.createElement('canvas').getContext('2d');c.font=`${style==='marker'?400:style==='handwrite'?600:700} ${size}px ${family},cursive`;
+export function wrapCaption(text,width,size,style,chinese){
+ const c=document.createElement('canvas').getContext('2d');c.font=textFont(text,size,style,chinese);
  // Keep English words intact. Closing punctuation belongs to the preceding
  // token, opening punctuation to the following one. Oversized tokens are
  // reduced by the caption's final fit instead of being split into letters.
  const lines=[];
  for(const paragraph of String(text).split('\n')){
   const tokens=[];let opening='';
-  for(const token of paragraph.trim().split(/\s+/u).filter(Boolean)){
+  for(const token of (paragraph.trim().match(/[\u3400-\u9fff]|[^\s\u3400-\u9fff]+/gu)||[])){
    if(/^[([{“‘「『《〈]+$/u.test(token)){opening+=token;continue}
    if(/^[,.;:!?%…，。！？；：、）】」』》〉)\]}'”’♡♥❤]+$/u.test(token)&&tokens.length){tokens[tokens.length-1]+=token;continue}
    tokens.push(opening+token);opening='';
   }
   if(opening){if(tokens.length)tokens[tokens.length-1]+=opening;else tokens.push(opening)}
-  let line='';for(const token of tokens){const next=line?line+' '+token:token;if(line&&c.measureText(next).width>width){lines.push(line);line=token}else line=next}lines.push(line);
+  let line='';for(const token of tokens){const next=line?line+(/[\u3400-\u9fff]/u.test(token)||/[\u3400-\u9fff]$/u.test(line)?'':' ')+token:token;if(line&&c.measureText(next).width>width){lines.push(line);line=token}else line=next}lines.push(line);
  }
  return lines.join('\n');
 }
 function renderPolaroid(c,frames,images,settings,width,height,selected,selection){
  const bg=images.get('__background__');c.fillStyle=settings.backgroundColor||'#8ba6a0';c.fillRect(0,0,width,height);
  if(bg&&backgroundSource(settings))photo(c,bg,{x:0,y:0,w:width,h:height},{zoom:1,focusX:.5,focusY:.5});
- else{const g=c.createLinearGradient(0,0,width,height);g.addColorStop(0,'#ffffff18');g.addColorStop(1,'#10292320');c.fillStyle=g;c.fillRect(0,0,width,height)}
+ else if(settings.backgroundMode!=='color'){const g=c.createLinearGradient(0,0,width,height);g.addColorStop(0,'#ffffff18');g.addColorStop(1,'#10292320');c.fillStyle=g;c.fillRect(0,0,width,height)}
  const used=polaroidFrames(frames,settings),slots=polaroidCards(frames,settings,width,height);
  const order=used.length===6&&width>height?[3,0,1,2,4,5]:slots.map((_,i)=>i);
  for(const index of order){const slot=slots[index],frame=used[index];c.save();const cx=slot.x+slot.w/2,cy=slot.y+slot.h/2;c.translate(cx,cy);c.rotate(slot.angle*Math.PI/180);c.translate(-cx,-cy);
@@ -128,19 +122,21 @@ function renderPolaroid(c,frames,images,settings,width,height,selected,selection
   const paper=c.createLinearGradient(slot.x,slot.y,slot.x+slot.w,slot.y+slot.h);paper.addColorStop(0,'#ffffff');paper.addColorStop(1,'#e9ece9');c.fillStyle=paper;c.fillRect(slot.x,slot.y,slot.w,slot.h);
   c.strokeStyle='#ffffff90';c.lineWidth=Math.max(1,width/1920);c.strokeRect(slot.x,slot.y,slot.w,slot.h);
   const img=images.get(frame.id);if(img)photo(c,img,slot.photo,frame);else{c.fillStyle='#b9c6c2';c.fillRect(slot.photo.x,slot.photo.y,slot.photo.w,slot.photo.h)}
-  {const caption=frame.polaroidCaption?.trim()?frame.polaroidCaption:DEFAULT_CAPTIONS[index%6];const box=slot.caption,size=Math.min(slot.w*.085,box.h*.36),text=textSprite(wrapCaption(caption,box.w*.96,size,settings.textStyle),size,settings.captionInk||'#303633',settings.textStyle||'handwrite');const fit=Math.min(1,box.w*.96/text.w,box.h*.82/text.h);c.save();c.beginPath();c.rect(box.x,box.y,box.w,box.h);c.clip();c.drawImage(text.sprite,box.x+box.w/2-text.sprite.width*fit/2,box.y+box.h/2-text.sprite.height*fit/2,text.sprite.width*fit,text.sprite.height*fit);c.restore()}
+  {const caption=frame.polaroidCaption?.trim()?frame.polaroidCaption:(settings.captionsClearedVersion===4&&!frame.showDefaultCaption?'':DEFAULT_CAPTIONS[index%6]);const box=slot.caption,size=Math.min(slot.w*.085,box.h*.36),text=textSprite(wrapCaption(caption,box.w*.96,size,settings.textStyle,settings.chineseFont),size,(frame.polaroidCaption?.trim()?settings.captionInk||'#303633':settings.defaultCaptionInk||'#92958f'),settings.textStyle||'handwrite',settings.chineseFont);const fit=Math.min(1,box.w*.96/text.w,box.h*.82/text.h);c.save();c.beginPath();c.rect(box.x,box.y,box.w,box.h);c.clip();c.drawImage(text.sprite,box.x+box.w/2-text.sprite.width*fit/2,box.y+box.h/2-text.sprite.height*fit/2,text.sprite.width*fit,text.sprite.height*fit);c.restore()}
   c.restore();
  }
- const bounds=order.map(index=>{const s=slots[index];return {id:'card:'+s.frameId,kind:'card',frameId:s.frameId,index,x:s.x+s.w/2,y:s.y+s.h/2,w:s.w,h:s.h,angle:s.angle*Math.PI/180,scale:s.scale}});
- const card=bounds.find(b=>b.id===selected);if(selection&&card){const unit=width/1920;c.save();c.translate(card.x,card.y);c.rotate(card.angle);c.strokeStyle='#ffd0b7';c.lineWidth=2*unit;c.strokeRect(-card.w/2,-card.h/2,card.w,card.h);c.fillStyle='#fff7ef';for(const x of [-card.w/2,card.w/2])for(const y of [-card.h/2,card.h/2]){c.fillRect(x-6*unit,y-6*unit,12*unit,12*unit);c.strokeRect(x-6*unit,y-6*unit,12*unit,12*unit)}c.restore()}
+ const bounds=order.map(index=>{const s=slots[index];return {id:'card:'+s.frameId,kind:'card',frameId:s.frameId,index,x:s.x+s.w/2,y:s.y+s.h/2,w:s.w,h:s.h,angle:s.angle*Math.PI/180,scale:s.scale,stretchX:s.stretchX,stretchY:s.stretchY}});
+ const card=bounds.find(b=>b.id===selected);if(selection&&card){const unit=width/1920;c.save();c.translate(card.x,card.y);c.rotate(card.angle);c.strokeStyle='#ffd0b7';c.lineWidth=2*unit;c.strokeRect(-card.w/2,-card.h/2,card.w,card.h);c.fillStyle='#fff7ef';for(const x of [-card.w/2,card.w/2])for(const y of [-card.h/2,card.h/2]){c.fillRect(x-6*unit,y-6*unit,12*unit,12*unit);c.strokeRect(x-6*unit,y-6*unit,12*unit,12*unit)}for(const [x,y] of [[-card.w/2,0],[card.w/2,0],[0,-card.h/2],[0,card.h/2]]){c.fillRect(x-5*unit,y-5*unit,10*unit,10*unit);c.strokeRect(x-5*unit,y-5*unit,10*unit,10*unit)}c.restore()}
  return bounds;
 
 }
 
 export function render(canvas,frames,images,settings,selectedDeco=null,selection=false){
+  frames=renderFrames(frames,settings);
   const [width,height]=settings.resolution.split('x').map(Number);if(canvas.width!==width)canvas.width=width;if(canvas.height!==height)canvas.height=height;
   const c=canvas.getContext('2d');c.clearRect(0,0,width,height);c.fillStyle='#0c0d0d';c.fillRect(0,0,width,height);
   const polaroid=settings.template==='polaroid',simple=settings.template==='simple',slots=polaroid||simple?[]:layout(frames.length,width,height,settings),unit=width/1920;
+  if(!polaroid){if(settings.backgroundMode==='color'){c.fillStyle=settings.backgroundColor;c.fillRect(0,0,width,height)}const bg=images.get('__background__');if(bg&&backgroundSource(settings))photo(c,bg,{x:0,y:0,w:width,h:height},{zoom:1,focusX:.5,focusY:.5})}
   const bounds=polaroid?renderPolaroid(c,frames,images,settings,width,height,selectedDeco,selection):[];
   for(const slot of slots){
     c.fillStyle='#191a18';c.fillRect(slot.x-unit*4,slot.y-slot.film,slot.w+unit*8,slot.h+slot.film*2);
@@ -157,13 +153,13 @@ export function render(canvas,frames,images,settings,selectedDeco=null,selection
     if(d.kind==='text'&&(polaroid||(d.scope||'film')!==(settings.template||'film')))continue;
     let w,h,text,fit=1;
     if(d.kind==='text'){
-      const size=Number(settings.textSize)*unit*(d.scale||1);text=textSprite(d.text,size,d.color||settings.ink,settings.textStyle||'handwrite');
+      const size=Number(settings.textSize)*unit*(d.scale||1);text=textSprite(d.text,size,d.color||settings.ink,settings.textStyle||'handwrite',settings.chineseFont);
       fit=Math.min(1,width*.85/text.w,height*.85/text.h);w=text.w*fit;h=text.h*fit;
     }else{w=h=100*unit*(d.scale||1)}
     const angle=(d.angle||0)*Math.PI/180,cos=Math.abs(Math.cos(angle)),sin=Math.abs(Math.sin(angle));
     const halfW=(w*cos+h*sin)/2+8*unit,halfH=(w*sin+h*cos)/2+8*unit;
     const cx=Math.max(Math.min(halfW,width/2),Math.min(width-halfW,d.x*width)),cy=Math.max(Math.min(halfH,height/2),Math.min(height-halfH,d.y*height));
-    c.save();c.translate(cx,cy);c.rotate(angle);
+    c.save();c.translate(cx,cy);c.rotate(angle);c.shadowColor='#0009';c.shadowBlur=3*unit;c.shadowOffsetY=unit;
     if(text)c.drawImage(text.sprite,-text.sprite.width*fit/2,-text.sprite.height*fit/2,text.sprite.width*fit,text.sprite.height*fit);
     else drawSticker(c,d,unit*(d.scale||1));
     if(selection&&d.id===selectedDeco){c.strokeStyle='#ffffff90';c.lineWidth=unit;c.setLineDash([5*unit,5*unit]);c.strokeRect(-w/2-8*unit,-h/2-8*unit,w+16*unit,h+16*unit)}

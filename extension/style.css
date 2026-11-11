@@ -24,3 +24,84 @@
 .brand .brand-logo{display:inline-block;width:117px;height:32px;object-fit:contain;vertical-align:middle;margin:0}
 
 .studio #decorationControls{border-top:1px solid #ffffff14;margin-top:16px;padding-top:1px}.studio #decorationControls #inkControl{border-top:0;padding-top:0;margin-top:16px}.studio #decorationControls input:disabled,.studio #decorationControls button:disabled{opacity:.35;cursor:default}
+/* v0.8: compact sidebar and a photo library whose size is independent of tools. */
+.panel{height:100dvh;min-height:0;overflow:hidden;padding:16px 18px;box-sizing:border-box;gap:0}
+.panel h1{font-size:23px;margin:6px 0;line-height:1.3}
+.panel .panel-description{margin:5px 0 10px;font-size:11px}
+.panel .project-picker{margin:6px 0;padding-bottom:6px}
+.panel .section-label{margin-top:12px}
+.panel .panel-grid{flex:1;min-height:60px;max-height:none;align-content:start;overflow-y:auto}
+.panel #status:empty{display:none}
+.panel #status{margin:5px 0;max-height:36px;overflow:auto}
+.panel #open{flex-shrink:0;margin-top:10px}
+.panel .quick-guide{margin:5px 0;text-align:center}
+.panel footer.creator-footer{margin:0;padding:6px 0 0}
+.studio #collection{position:relative}
+.studio #frames{flex:1;min-height:0}
+.studio #photoSettings,.studio #cropDetails{flex-shrink:0;border-top:1px solid var(--line);margin-top:6px;padding-top:6px}
+.studio #photoSettings summary{cursor:pointer;font-size:11px;color:#c7b9af;padding:4px 0}
+.studio .settings-scroll{max-height:160px;overflow-y:auto;padding:0 3px}
+.studio #collection:has(details[open]) #frames{flex:1}
+.studio #photoSettings[open],.studio #cropDetails[open]{position:absolute;bottom:0;left:0;right:0;z-index:5;background:#202023;border:1px solid #ffffff30;border-radius:8px;padding:8px;box-shadow:0 -8px 24px #0006}
+.studio #photoSettings[open] summary::after,.studio #cropDetails[open] summary::after{content:'点击收起';float:right;color:#948b81;font-size:10px}
+.studio #paperCount label{margin:0 0 6px;flex-direction:row;align-items:center;justify-content:space-between}
+.number-stepper{display:flex;align-items:center;gap:5px;width:150px}
+.number-stepper button{background:#ffffff12;color:#ffe1c3;border:1px solid #ffffff30;border-radius:5px;width:32px;height:30px;flex-shrink:0}
+.studio .number-stepper input{min-width:0;text-align:center;padding:6px}
+.studio #globalInk{width:100%;margin-bottom:8px}
+.studio #backgroundControls .button-row{margin:8px 0;align-items:center}
+.studio .settings-scroll label{margin:10px 0;gap:5px}
+.studio #polaroidSelection .number-stepper{width:140px;flex-shrink:0;overflow:visible}
+.studio #polaroidSelection .number-stepper button{width:30px;height:28px;padding:0;flex:0 0 30px}
+.studio #polaroidSelection .number-stepper input{width:64px;flex:1;padding:5px 2px;appearance:textfield}
+.studio #polaroidSelection .number-stepper input::-webkit-inner-spin-button{appearance:none}
+.studio #polaroidSelection{padding:5px}
+.studio #paperCount label{margin:0 0 3px;font-size:11px}
+.studio #useAllFilm{margin-top:4px}
+/* v0.9: inline tools, explicit number controls, reliable photo actions. */
+.studio #collection{display:block;overflow-y:auto;padding-right:5px}
+.studio #frames{height:clamp(300px,43vh,520px);min-height:300px;flex:none;max-height:none;overflow-y:auto}
+.studio #cropDetails[open],.studio #photoSettings[open]{position:static;box-shadow:none;background:transparent;border:0;border-top:1px solid var(--line);border-radius:0;padding:7px 0;margin-top:7px}
+.studio #photoSettings .settings-scroll,.studio #crop{max-height:none;overflow:visible}
+.studio #photoSettings[open] summary::after,.studio #cropDetails[open] summary::after{content:''}
+.studio .count-row{display:flex;align-items:center;justify-content:space-between;gap:8px;font-size:11px;color:#c7b9af;margin:0 0 5px}
+.studio #polaroidSelection .number-stepper button{width:30px;flex:0 0 30px;height:28px;padding:0}
+.studio #polaroidSelection .number-stepper input{width:60px;min-width:0;flex:1;appearance:textfield;text-align:center}
+.studio #inkControl{display:flex;align-items:center;gap:9px;padding-top:10px;margin:14px 0 10px}
+.studio #inkControl label{margin:0;white-space:nowrap}
+.studio #inkControl #ink{width:48px;flex:1}
+.studio #inkControl #globalInk{width:auto;margin:0;white-space:nowrap}
+.studio #removeDeco{width:100%}
+.studio #cardControls{display:flex;flex-wrap:wrap;gap:8px;justify-content:center}
+.studio #cardControls label{margin:0;display:flex;align-items:center;flex-direction:row;gap:5px}
+.studio #cardControls input{width:85px}
+.studio .thumb-delete,.panel .photo-action{z-index:3;display:grid;place-items:center;width:25px;height:25px;padding:0;line-height:1;cursor:pointer;touch-action:manipulation}
+.studio .thumb-delete svg,.panel .photo-action svg{pointer-events:none;display:block}
+.studio .used-badge{pointer-events:none}
+.studio #words textarea::placeholder{color:#817a74}
+.creator-footer{white-space:nowrap;font-size:9px}
+/* v0.9.1 compact photo badges and aligned global actions */
+.studio .thumb-delete{width:17px;height:17px;right:3px;top:3px;font-size:13px;border-radius:4px}
+.studio .thumb-delete svg{width:12px;height:12px}
+.studio .thumb .used-badge{right:3px;bottom:3px;font-size:8px;line-height:12px;padding:0 3px;min-width:16px;text-align:center}
+.studio #inkControl{display:grid;grid-template-columns:auto minmax(0,1fr) 76px;gap:8px}
+.studio #inkControl #ink{width:100%;min-width:0}
+.studio #inkControl #globalInk{width:76px;padding:8px 5px;box-sizing:border-box}
+.studio .delete-decoration-row{display:grid;grid-template-columns:minmax(0,1fr) 76px;gap:8px}
+.studio .delete-decoration-row button{min-width:0;padding:8px 5px;font-size:11px;white-space:nowrap}
+/* v0.9.2 keep photo adjustments next to the final visible row. */
+.studio #frames{height:auto;min-height:0;max-height:clamp(300px,43vh,520px)}
+.studio #cropDetails,.studio #cropDetails[open]{margin-top:0;padding-top:4px}
+.color-swatch{width:24px!important;height:24px!important;min-width:24px;border:1px solid #ffffff50;border-radius:5px;padding:2px;cursor:pointer;background:var(--swatch);box-shadow:inset 0 0 0 2px #222}
+.studio #inkControl{grid-template-columns:auto 24px minmax(0,1fr) 76px}
+.studio #inkControl #globalInk{grid-column:4}
+.compact-palette{position:fixed;z-index:50;width:164px;padding:9px;background:#242427;border:1px solid #ffffff35;border-radius:8px;box-shadow:0 6px 20px #0008;display:grid;gap:8px}
+.compact-palette .palette-colors{width:144px;height:88px;cursor:crosshair}
+.compact-palette input{width:100%;background:#171719;color:#eee;border:1px solid #ffffff30;border-radius:4px;padding:5px;font:12px monospace}
+.compact-palette>.secondary{padding:6px;font-size:11px}
+.palette-swatches{display:flex;gap:5px}.palette-swatches button{width:22px;height:20px;padding:0;border:1px solid #ffffff40;border-radius:3px;cursor:pointer}
+.canvas-eyedropper{position:fixed;inset:0;z-index:100;background:transparent;cursor:crosshair}
+.eyedropper-lens{position:fixed;width:40px;height:40px;border:1px solid #fff;border-radius:4px;box-shadow:0 2px 8px #0008;pointer-events:none}
+.eyedropper-tip{position:fixed;top:12px;left:50%;transform:translateX(-50%);background:#171719e8;color:#eee;font-size:11px;padding:7px 12px;border-radius:5px;pointer-events:none}
+.studio #words .caption-editor textarea::placeholder{color:#9c9994;opacity:.7}
+.studio canvas.eyedropper-lens{width:40px;height:40px;max-width:40px;max-height:40px}

@@ -2,10 +2,26 @@ import {addFrame,getProjects,getActiveProjectId,getProject,setActiveProject,crea
 if(chrome.sidePanel?.setPanelBehavior)chrome.sidePanel.setPanelBehavior({openPanelOnActionClick:false}).catch(console.error);
 let queue=Promise.resolve();
 async function notify(){chrome.runtime.sendMessage({type:'DATA_CHANGED'}).catch(()=>{});const tabs=await chrome.tabs.query({});for(const tab of tabs)chrome.tabs.sendMessage(tab.id,{type:'PROJECTS_CHANGED'}).catch(()=>{})}
-async function activateTab(tabId,show=true){
- try{await chrome.scripting.executeScript({target:{tabId},files:['content.js']});return await chrome.tabs.sendMessage(tabId,{type:'SET_ENABLED',enabled:show})}
- catch{throw new Error('无法访问这个页面。请切到普通视频网页，点击 浏览器工具栏里的插件图标后重试。')}
+const VERSION='0.9.4';
+async function ensureContent(tabId){
+ try{const ping=await chrome.tabs.sendMessage(tabId,{type:'PING'});if(ping?.version===VERSION)return}catch{}
+ await chrome.scripting.executeScript({target:{tabId},files:['content.js']});
 }
+async function activateTab(tabId,show=true){
+ try{await ensureContent(tabId);return await chrome.tabs.sendMessage(tabId,{type:'SET_ENABLED',enabled:show})}
+ catch{throw new Error('请在当前视频页点击一次插件图标以连接截图工具，无需关闭视频或侧边栏。')}
+}
+async function captureCurrent(tabId,mode='auto'){
+ if(!tabId){const [tab]=await chrome.tabs.query({active:true,lastFocusedWindow:true});tabId=tab?.id}if(!tabId)throw new Error('请先切到要截图的视频页面。');
+ try{await ensureContent(tabId)}catch{throw new Error('请在当前视频页点击一次插件图标以连接截图工具，无需关闭视频或侧边栏。')}
+ try{return await chrome.tabs.sendMessage(tabId,{type:'CAPTURE_FRAME',mode})}catch{await chrome.scripting.executeScript({target:{tabId},files:['content.js']});return chrome.tabs.sendMessage(tabId,{type:'CAPTURE_FRAME',mode})}
+}
+async function connectExisting(){const tabs=await chrome.tabs.query({});await Promise.allSettled(tabs.map(tab=>ensureContent(tab.id)))}
+chrome.runtime.onInstalled.addListener(()=>connectExisting().catch(()=>{}));
+chrome.runtime.onStartup.addListener(()=>connectExisting().catch(()=>{}));
+chrome.tabs.onActivated.addListener(({tabId})=>ensureContent(tabId).catch(()=>{}));
+chrome.tabs.onUpdated.addListener((tabId,change,tab)=>{if(change.status==='complete')ensureContent(tabId).catch(()=>{})});
+connectExisting().catch(()=>{});
 async function openStudio(){const tabs=await chrome.tabs.query({url:chrome.runtime.getURL('studio.html')});if(tabs[0]){await chrome.tabs.update(tabs[0].id,{active:true});await chrome.windows.update(tabs[0].windowId,{focused:true})}else await chrome.tabs.create({url:chrome.runtime.getURL('studio.html')})}
 chrome.action.onClicked.addListener(tab=>{
  // Call before awaiting, while the toolbar user gesture is live.
@@ -18,6 +34,7 @@ chrome.runtime.onMessage.addListener((msg,sender,respond)=>{
   if(msg.type==='NEW_PROJECT'){const project=await createProject(msg.name);await notify();return {ok:true,project}}
   if(msg.type==='DATA_MUTATED'){await notify();return {ok:true}}
   if(msg.type==='OPEN_STUDIO'){await openStudio();return {ok:true}}
+  if(msg.type==='CAPTURE_CURRENT')return captureCurrent(msg.tabId,msg.mode);
   if(msg.type==='ACTIVATE_PAGE')return activateTab(msg.tabId,msg.enabled!==false);
   if(msg.type==='SAVE_FRAME'&&sender.tab&&/^https?:\/\//.test(sender.url||'')){
    if(!msg.frame?.dataUrl?.startsWith('data:image/')||msg.frame.dataUrl.length>35000000)throw new Error('图片格式无效或图片过大');

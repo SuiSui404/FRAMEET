@@ -1,0 +1,1 @@
+export const restoreIcon='<svg viewBox="0 0 24 24" width="17" height="17" aria-hidden="true" fill="none"><path d="M19.5 9A8 8 0 1 0 12 20" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"/><path d="m16 8 4 2 1-4" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/></svg>';
