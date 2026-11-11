@@ -1,5 +1,5 @@
 (()=>{
- const VERSION='0.9.4',previous=globalThis.__frameetController;if(previous?.version===VERSION)return;previous?.dispose();document.getElementById('frame-notes-host')?.remove();
+ const VERSION='0.9.5',previous=globalThis.__frameetController;if(previous?.version===VERSION)return;previous?.dispose();document.getElementById('frame-notes-host')?.remove();
  const host=document.createElement('div');host.id='frame-notes-host';host.hidden=true;
  host.setAttribute('popover','manual');
  host.style.cssText='position:fixed;inset:auto;right:16px;bottom:24px;margin:0;padding:0;border:0;background:transparent;overflow:visible;z-index:2147483646;max-width:calc(100vw - 24px);width:max-content';

@@ -1,7 +1,7 @@
 {
   "manifest_version": 3,
   "name": "FRAMEET · 视频截图拼壁纸",
-  "version": "0.9.4",
+  "version": "0.9.5",
   "description": "把心动的一帧留在桌面上。边看视频边截图，自动拼成专属壁纸，加上文字和贴纸，每天与喜欢的画面重逢。",
   "minimum_chrome_version": "116",
   "permissions": [

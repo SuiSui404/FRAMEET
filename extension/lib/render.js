@@ -122,7 +122,20 @@ function renderPolaroid(c,frames,images,settings,width,height,selected,selection
   const paper=c.createLinearGradient(slot.x,slot.y,slot.x+slot.w,slot.y+slot.h);paper.addColorStop(0,'#ffffff');paper.addColorStop(1,'#e9ece9');c.fillStyle=paper;c.fillRect(slot.x,slot.y,slot.w,slot.h);
   c.strokeStyle='#ffffff90';c.lineWidth=Math.max(1,width/1920);c.strokeRect(slot.x,slot.y,slot.w,slot.h);
   const img=images.get(frame.id);if(img)photo(c,img,slot.photo,frame);else{c.fillStyle='#b9c6c2';c.fillRect(slot.photo.x,slot.photo.y,slot.photo.w,slot.photo.h)}
-  {const caption=frame.polaroidCaption?.trim()?frame.polaroidCaption:(settings.captionsClearedVersion===4&&!frame.showDefaultCaption?'':DEFAULT_CAPTIONS[index%6]);const box=slot.caption,size=Math.min(slot.w*.085,box.h*.36),text=textSprite(wrapCaption(caption,box.w*.96,size,settings.textStyle,settings.chineseFont),size,(frame.polaroidCaption?.trim()?settings.captionInk||'#303633':settings.defaultCaptionInk||'#92958f'),settings.textStyle||'handwrite',settings.chineseFont);const fit=Math.min(1,box.w*.96/text.w,box.h*.82/text.h);c.save();c.beginPath();c.rect(box.x,box.y,box.w,box.h);c.clip();c.drawImage(text.sprite,box.x+box.w/2-text.sprite.width*fit/2,box.y+box.h/2-text.sprite.height*fit/2,text.sprite.width*fit,text.sprite.height*fit);c.restore()}
+  const customCaption=frame.polaroidCaption?.trim();
+  const caption=customCaption||DEFAULT_CAPTIONS[index%DEFAULT_CAPTIONS.length];
+  const box=slot.caption,size=Math.min(slot.w*.085,box.h*.36);
+  const color=customCaption?settings.captionInk||'#303633':settings.defaultCaptionInk||'#92958f';
+  const text=textSprite(wrapCaption(caption,box.w*.96,size,settings.textStyle,settings.chineseFont),
+    size,color,settings.textStyle||'handwrite',settings.chineseFont);
+  const fit=Math.min(1,box.w*.96/text.w,box.h*.82/text.h);
+  c.save();
+  c.beginPath();
+  c.rect(box.x,box.y,box.w,box.h);
+  c.clip();
+  c.drawImage(text.sprite,box.x+(box.w-text.sprite.width*fit)/2,box.y+(box.h-text.sprite.height*fit)/2,
+    text.sprite.width*fit,text.sprite.height*fit);
+  c.restore();
   c.restore();
  }
  const bounds=order.map(index=>{const s=slots[index];return {id:'card:'+s.frameId,kind:'card',frameId:s.frameId,index,x:s.x+s.w/2,y:s.y+s.h/2,w:s.w,h:s.h,angle:s.angle*Math.PI/180,scale:s.scale,stretchX:s.stretchX,stretchY:s.stretchY}});

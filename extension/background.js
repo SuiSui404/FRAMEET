@@ -2,7 +2,7 @@ import {addFrame,getProjects,getActiveProjectId,getProject,setActiveProject,crea
 if(chrome.sidePanel?.setPanelBehavior)chrome.sidePanel.setPanelBehavior({openPanelOnActionClick:false}).catch(console.error);
 let queue=Promise.resolve();
 async function notify(){chrome.runtime.sendMessage({type:'DATA_CHANGED'}).catch(()=>{});const tabs=await chrome.tabs.query({});for(const tab of tabs)chrome.tabs.sendMessage(tab.id,{type:'PROJECTS_CHANGED'}).catch(()=>{})}
-const VERSION='0.9.4';
+const VERSION='0.9.5';
 async function ensureContent(tabId){
  try{const ping=await chrome.tabs.sendMessage(tabId,{type:'PING'});if(ping?.version===VERSION)return}catch{}
  await chrome.scripting.executeScript({target:{tabId},files:['content.js']});

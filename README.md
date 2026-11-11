@@ -10,9 +10,9 @@ FRAMEET = Frame × Meet，让视频里遇见的画面，在桌面上反复重逢
 
 ## 当前版本
 
-v0.9.4。支持桌面版Chrome / Microsoft Edge，使用Manifest V3，Chrome最低版本116。扩展商店上架流程进行中；获得正式商店链接后会更新本页。
+v0.9.5。支持桌面版Chrome / Microsoft Edge，使用Manifest V3，Chrome最低版本116。扩展商店上架流程进行中；获得正式商店链接后会更新本页。
 
-下载：[FRAMEET v0.9.4 ZIP](https://github.com/SuiSui404/FRAMEET/raw/main/dist/FRAMEET-v0.9.4.zip)。解压后包含可加载的manifest.json、脚本与资源。
+下载：[FRAMEET v0.9.5 ZIP](https://github.com/SuiSui404/FRAMEET/raw/main/dist/FRAMEET-v0.9.5.zip)。解压后包含可加载的manifest.json、脚本与资源。
 
 ## 本地安装
 
